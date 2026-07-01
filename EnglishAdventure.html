@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>English Adventure 🗺️</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  min-height:100vh;
+  background:linear-gradient(160deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);
+  font-family:'Segoe UI',sans-serif;
+  display:flex;justify-content:center;
+  padding:16px 16px 40px;
+}
+#app{width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center;}
+
+/* ── TOP BAR ── */
+.topbar{
+  width:100%;display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:16px;
+}
+.player-info{
+  background:rgba(255,255,255,0.1);
+  border:1px solid rgba(255,255,255,0.2);
+  border-radius:14px;padding:8px 14px;
+  color:#fff;font-size:13px;font-weight:700;
+  display:flex;align-items:center;gap:6px;
+}
+.stars-badge{
+  background:linear-gradient(135deg,#FFD93D,#FF8C00);
+  border-radius:14px;padding:8px 14px;
+  font-size:14px;font-weight:800;color:#7a3000;
+  display:flex;align-items:center;gap:4px;
+  box-shadow:0 2px 10px #FFD93D55;
+}
+
+/* ── MAP TITLE ── */
+.map-title{
+  font-size:26px;font-weight:900;color:#fff;
+  text-align:center;margin-bottom:4px;
+  letter-spacing:-0.5px;
+}
+.map-subtitle{
+  font-size:13px;color:rgba(255,255,255,0.5);
+  text-align:center;margin-bottom:20px;
+}
+
+/* ── STAGE CARDS ── */
+.stages-list{width:100%;display:flex;flex-direction:column;gap:12px;}
+
+.stage-card{
+  width:100%;border-radius:22px;padding:16px 18px;
+  cursor:pointer;transition:all 0.25s;
+  display:flex;align-items:center;gap:16px;
+  position:relative;overflow:hidden;
+  border:2px solid transparent;
+}
+.stage-card:hover:not(.locked){transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.3);}
+.stage-card:active:not(.locked){transform:scale(0.98);}
+.stage-card.locked{opacity:0.45;cursor:not-allowed;}
+.stage-card.completed{border-color:rgba(255,255,255,0.3);}
+
+.stage-icon-wrap{
+  width:60px;height:60px;border-radius:18px;
+  background:rgba(255,255,255,0.15);
+  display:flex;align-items:center;justify-content:center;
+  font-size:34px;flex-shrink:0;
+}
+.stage-info{flex:1;}
+.stage-name{font-size:17px;font-weight:800;color:#fff;margin-bottom:3px;}
+.stage-desc{font-size:12px;color:rgba(255,255,255,0.65);margin-bottom:8px;}
+.stage-progress{background:rgba(255,255,255,0.15);border-radius:99px;height:6px;overflow:hidden;}
+.stage-fill{height:100%;border-radius:99px;background:rgba(255,255,255,0.8);transition:width 0.5s ease;}
+.stage-status{
+  font-size:12px;font-weight:700;color:rgba(255,255,255,0.5);
+  margin-top:4px;
+}
+.lock-icon{font-size:22px;flex-shrink:0;}
+.star-row{display:flex;gap:3px;margin-top:5px;}
+.star{font-size:14px;filter:grayscale(1);opacity:0.4;}
+.star.earned{filter:none;opacity:1;}
+
+/* ── QUIZ SCREEN ── */
+.quiz-screen{width:100%;}
+.quiz-header{
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:16px;
+}
+.back-btn{
+  background:rgba(255,255,255,0.1);border:none;
+  border-radius:12px;padding:10px 14px;
+  color:#fff;font-size:14px;cursor:pointer;
+  transition:0.2s;font-family:inherit;font-weight:700;
+}
+.back-btn:hover{background:rgba(255,255,255,0.2);}
+.quiz-stage-name{font-size:16px;font-weight:800;color:#fff;}
+
+.progress-bar-wrap{
+  width:100%;background:rgba(255,255,255,0.1);
+  border-radius:99px;height:8px;margin-bottom:20px;overflow:hidden;
+}
+.progress-bar-fill{
+  height:100%;border-radius:99px;
+  background:linear-gradient(90deg,#6BCB77,#FFD93D);
+  transition:width 0.4s ease;
+}
+
+.question-card{
+  background:rgba(255,255,255,0.95);
+  border-radius:24px;padding:24px 20px;
+  margin-bottom:16px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.3);
+  text-align:center;
+}
+.question-number{
+  font-size:12px;font-weight:700;color:#aaa;
+  margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;
+}
+.question-text{
+  font-size:22px;font-weight:900;color:#222;
+  line-height:1.3;margin-bottom:6px;
+}
+.question-hint{font-size:13px;color:#888;}
+
+.choices-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  margin-bottom:14px;
+}
+.choice-btn{
+  background:#fff;
+  border:3px solid #e8e8e8;
+  border-radius:20px;padding:14px 8px;
+  cursor:pointer;transition:all 0.2s;
+  display:flex;flex-direction:column;
+  align-items:center;gap:6px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.06);
+  font-family:inherit;
+}
+.choice-btn:hover:not(.disabled){transform:scale(1.04);}
+.choice-btn:active:not(.disabled){transform:scale(0.97);}
+.choice-btn.correct{
+  background:#E8F5E9;border-color:#4CAF50;
+  transform:scale(1.06);
+  box-shadow:0 4px 16px rgba(76,175,80,0.35);
+  animation:correctPop 0.4s ease;
+}
+.choice-btn.wrong{
+  background:#FFEBEE;border-color:#EF5350;
+  animation:shake 0.4s ease;
+}
+.choice-btn.disabled{cursor:default;}
+.choice-em{font-size:38px;line-height:1;}
+.choice-lbl{font-size:13px;font-weight:700;color:#444;}
+.choice-btn.correct .choice-lbl{color:#2E7D32;}
+.choice-btn.wrong   .choice-lbl{color:#C62828;}
+
+/* feedback overlay inside question card */
+.feedback-strip{
+  border-radius:14px;padding:12px;
+  text-align:center;font-size:16px;font-weight:800;
+  margin-top:4px;animation:fadeIn 0.3s;
+}
+.feedback-strip.good{background:#E8F5E9;color:#2E7D32;}
+.feedback-strip.bad {background:#FFEBEE;color:#C62828;}
+
+/* ── STAGE CLEAR ── */
+.clear-card{
+  background:rgba(255,255,255,0.95);
+  border-radius:28px;padding:32px 24px;
+  text-align:center;
+  box-shadow:0 12px 40px rgba(0,0,0,0.4);
+  animation:popIn 0.5s cubic-bezier(.4,2,.6,1);
+}
+.clear-emoji{font-size:72px;display:block;margin-bottom:12px;}
+.clear-title{font-size:26px;font-weight:900;color:#222;margin-bottom:6px;}
+.clear-subtitle{font-size:14px;color:#777;margin-bottom:20px;}
+.clear-stars{display:flex;justify-content:center;gap:10px;margin-bottom:24px;font-size:40px;}
+.clear-score{
+  background:#F5F5F5;border-radius:16px;
+  padding:12px 20px;margin-bottom:20px;
+  font-size:15px;font-weight:700;color:#555;
+}
+.next-btn{
+  width:100%;background:linear-gradient(135deg,#6BCB77,#4CAF50);
+  border:none;border-radius:16px;padding:16px;
+  color:#fff;font-size:17px;font-weight:800;
+  cursor:pointer;transition:0.2s;font-family:inherit;
+  box-shadow:0 4px 16px rgba(76,175,80,0.4);
+}
+.next-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(76,175,80,0.5);}
+.retry-btn{
+  width:100%;background:none;
+  border:2px solid #ddd;border-radius:16px;padding:13px;
+  color:#888;font-size:15px;font-weight:700;
+  cursor:pointer;transition:0.2s;font-family:inherit;
+  margin-top:10px;
+}
+
+@keyframes correctPop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1.06)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes popIn{from{opacity:0;transform:scale(0.8)}to{opacity:1;transform:scale(1)}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ── DATA ─────────────────────────────────────────────────────────
+const STAGES = [
+  {
+    id:0, name:"Happy Town 🏙️", icon:"🏙️",
+    color:"linear-gradient(135deg,#FF6B6B,#FF8E53)",
+    desc:"Colors & Numbers",
+    questions:[
+      { q:"Find the RED one! 🔴", choices:[{e:"🔴",l:"Red"},{e:"🔵",l:"Blue"},{e:"🟢",l:"Green"},{e:"🟡",l:"Yellow"}], ans:"Red" },
+      { q:"Which number is THREE? 3️⃣", choices:[{e:"2️⃣",l:"Two"},{e:"5️⃣",l:"Five"},{e:"3️⃣",l:"Three"},{e:"8️⃣",l:"Eight"}], ans:"Three" },
+      { q:"Find the BLUE one! 💙", choices:[{e:"🟠",l:"Orange"},{e:"🔵",l:"Blue"},{e:"🟣",l:"Purple"},{e:"⚫",l:"Black"}], ans:"Blue" },
+      { q:"How many stars? ⭐⭐⭐", choices:[{e:"2️⃣",l:"Two"},{e:"4️⃣",l:"Four"},{e:"3️⃣",l:"Three"},{e:"1️⃣",l:"One"}], ans:"Three" },
+      { q:"Find the YELLOW one! 💛", choices:[{e:"🔴",l:"Red"},{e:"🟤",l:"Brown"},{e:"🔵",l:"Blue"},{e:"🟡",l:"Yellow"}], ans:"Yellow" },
+      { q:"Which number is FIVE? 🖐️", choices:[{e:"5️⃣",l:"Five"},{e:"3️⃣",l:"Three"},{e:"7️⃣",l:"Seven"},{e:"9️⃣",l:"Nine"}], ans:"Five" },
+    ]
+  },
+  {
+    id:1, name:"Magic Forest 🌳", icon:"🌳",
+    color:"linear-gradient(135deg,#56ab2f,#a8e063)",
+    desc:"Animals & Nature",
+    questions:[
+      { q:"Find the CAT! 🐱", choices:[{e:"🐶",l:"Dog"},{e:"🐱",l:"Cat"},{e:"🐸",l:"Frog"},{e:"🐻",l:"Bear"}], ans:"Cat" },
+      { q:"Which one can FLY? 🕊️", choices:[{e:"🐟",l:"Fish"},{e:"🐢",l:"Turtle"},{e:"🦋",l:"Butterfly"},{e:"🐇",l:"Rabbit"}], ans:"Butterfly" },
+      { q:"Find the ELEPHANT! 🐘", choices:[{e:"🦒",l:"Giraffe"},{e:"🐘",l:"Elephant"},{e:"🦁",l:"Lion"},{e:"🐆",l:"Leopard"}], ans:"Elephant" },
+      { q:"Which is a BIRD? 🐦", choices:[{e:"🐊",l:"Crocodile"},{e:"🦊",l:"Fox"},{e:"🦅",l:"Eagle"},{e:"🐠",l:"Clownfish"}], ans:"Eagle" },
+      { q:"Find the FLOWER! 🌸", choices:[{e:"🌵",l:"Cactus"},{e:"🍄",l:"Mushroom"},{e:"🌸",l:"Flower"},{e:"🌿",l:"Leaf"}], ans:"Flower" },
+      { q:"Which one lives in water? 🌊", choices:[{e:"🐰",l:"Rabbit"},{e:"🐺",l:"Wolf"},{e:"🐠",l:"Fish"},{e:"🦔",l:"Hedgehog"}], ans:"Fish" },
+    ]
+  },
+  {
+    id:2, name:"Sunny Beach 🏖️", icon:"🏖️",
+    color:"linear-gradient(135deg,#00B4DB,#0083B0)",
+    desc:"Weather & Clothes",
+    questions:[
+      { q:"It is SUNNY today! Find the sun! ☀️", choices:[{e:"🌧️",l:"Rain"},{e:"❄️",l:"Snow"},{e:"☀️",l:"Sun"},{e:"🌫️",l:"Fog"}], ans:"Sun" },
+      { q:"It is COLD! What should I wear? 🥶", choices:[{e:"👙",l:"Swimsuit"},{e:"🩳",l:"Shorts"},{e:"🧥",l:"Coat"},{e:"👒",l:"Sun hat"}], ans:"Coat" },
+      { q:"Find the UMBRELLA! ☔", choices:[{e:"🕶️",l:"Sunglasses"},{e:"☔",l:"Umbrella"},{e:"👟",l:"Shoes"},{e:"🎒",l:"Backpack"}], ans:"Umbrella" },
+      { q:"It is RAINING! Find the rain! 🌧️", choices:[{e:"☀️",l:"Sunshine"},{e:"🌈",l:"Rainbow"},{e:"🌧️",l:"Rain"},{e:"⛅",l:"Cloudy"}], ans:"Rain" },
+      { q:"What do you wear at the BEACH? 🏄", choices:[{e:"🧥",l:"Coat"},{e:"👙",l:"Swimsuit"},{e:"🥾",l:"Boots"},{e:"🎩",l:"Top hat"}], ans:"Swimsuit" },
+      { q:"Find the RAINBOW! 🌈", choices:[{e:"⚡",l:"Lightning"},{e:"🌊",l:"Wave"},{e:"🌪️",l:"Tornado"},{e:"🌈",l:"Rainbow"}], ans:"Rainbow" },
+    ]
+  },
+  {
+    id:3, name:"Outer Space 🚀", icon:"🚀",
+    color:"linear-gradient(135deg,#434343,#7b4fbb)",
+    desc:"Shapes & Sizes",
+    questions:[
+      { q:"Find the CIRCLE! ⭕", choices:[{e:"🔷",l:"Diamond"},{e:"⭕",l:"Circle"},{e:"🔺",l:"Triangle"},{e:"🟥",l:"Square"}], ans:"Circle" },
+      { q:"Which one is BIG? 🐘", choices:[{e:"🐜",l:"Ant"},{e:"🐝",l:"Bee"},{e:"🐘",l:"Elephant"},{e:"🐛",l:"Worm"}], ans:"Elephant" },
+      { q:"Find the STAR! ⭐", choices:[{e:"🌙",l:"Moon"},{e:"☀️",l:"Sun"},{e:"⭐",l:"Star"},{e:"🌍",l:"Earth"}], ans:"Star" },
+      { q:"Which one is SMALL? 🔬", choices:[{e:"🏠",l:"House"},{e:"🚗",l:"Car"},{e:"🐜",l:"Ant"},{e:"🌲",l:"Tree"}], ans:"Ant" },
+      { q:"Find the TRIANGLE! 🔺", choices:[{e:"⭕",l:"Circle"},{e:"🟦",l:"Square"},{e:"🔺",l:"Triangle"},{e:"💎",l:"Diamond"}], ans:"Triangle" },
+      { q:"Which planet has RINGS? 🪐", choices:[{e:"🌍",l:"Earth"},{e:"🌙",l:"Moon"},{e:"☀️",l:"Sun"},{e:"🪐",l:"Saturn"}], ans:"Saturn" },
+    ]
+  },
+  {
+    id:4, name:"Green Farm 🌾", icon:"🌾",
+    color:"linear-gradient(135deg,#f7971e,#ffd200)",
+    desc:"Food & Actions",
+    questions:[
+      { q:"Find the APPLE! 🍎", choices:[{e:"🍊",l:"Orange"},{e:"🍇",l:"Grapes"},{e:"🍎",l:"Apple"},{e:"🍓",l:"Strawberry"}], ans:"Apple" },
+      { q:"Who is RUNNING? 🏃", choices:[{e:"🧘",l:"Sitting"},{e:"🏃",l:"Running"},{e:"🛌",l:"Sleeping"},{e:"🙏",l:"Praying"}], ans:"Running" },
+      { q:"Find the VEGETABLE! 🥦", choices:[{e:"🍰",l:"Cake"},{e:"🍬",l:"Candy"},{e:"🍕",l:"Pizza"},{e:"🥦",l:"Broccoli"}], ans:"Broccoli" },
+      { q:"Who is EATING? 🍽️", choices:[{e:"🏊",l:"Swimming"},{e:"✍️",l:"Writing"},{e:"😋",l:"Eating"},{e:"💃",l:"Dancing"}], ans:"Eating" },
+      { q:"Find the MILK! 🥛", choices:[{e:"🧃",l:"Juice"},{e:"🥛",l:"Milk"},{e:"🧋",l:"Boba"},{e:"☕",l:"Coffee"}], ans:"Milk" },
+      { q:"Find the FRUIT! 🍑", choices:[{e:"🥕",l:"Carrot"},{e:"🥬",l:"Lettuce"},{e:"🍑",l:"Peach"},{e:"🌽",l:"Corn"}], ans:"Peach" },
+    ]
+  },
+  {
+    id:5, name:"Fun Carnival 🎪", icon:"🎪",
+    color:"linear-gradient(135deg,#f953c6,#b91d73)",
+    desc:"Feelings & Adjectives",
+    questions:[
+      { q:"Find HAPPY! 😄", choices:[{e:"😢",l:"Sad"},{e:"😡",l:"Angry"},{e:"😄",l:"Happy"},{e:"😱",l:"Scared"}], ans:"Happy" },
+      { q:"Which one is FAST? 🏎️", choices:[{e:"🐢",l:"Turtle"},{e:"🐌",l:"Snail"},{e:"🏎️",l:"Race car"},{e:"🪨",l:"Rock"}], ans:"Race car" },
+      { q:"Find SAD! 😢", choices:[{e:"😆",l:"Laughing"},{e:"😢",l:"Sad"},{e:"😍",l:"In love"},{e:"🤩",l:"Excited"}], ans:"Sad" },
+      { q:"Which one is SOFT? 🧸", choices:[{e:"🪨",l:"Rock"},{e:"⚙️",l:"Metal"},{e:"🧸",l:"Teddy bear"},{e:"🔩",l:"Screw"}], ans:"Teddy bear" },
+      { q:"Find SURPRISED! 😲", choices:[{e:"😴",l:"Sleepy"},{e:"🤔",l:"Thinking"},{e:"😲",l:"Surprised"},{e:"😏",l:"Smirking"}], ans:"Surprised" },
+      { q:"Which one is HEAVY? 🏋️", choices:[{e:"🪶",l:"Feather"},{e:"🍃",l:"Leaf"},{e:"🏋️",l:"Weights"},{e:"🎈",l:"Balloon"}], ans:"Weights" },
+    ]
+  },
+];
+
+// ── STATE ────────────────────────────────────────────────────────
+let state = {
+  screen: "map",          // "map" | "quiz" | "clear"
+  stageId: null,
+  qIndex: 0,
+  answered: null,         // null | "correct" | "wrong"
+  selectedLabel: null,
+  correctCount: 0,
+  totalStars: 0,
+  stageProgress: STAGES.map(() => ({ done: false, stars: 0, bestCorrect: 0 })),
+};
+
+function setState(patch){ state = Object.assign({}, state, patch); render(); }
+
+// ── LOGIC ────────────────────────────────────────────────────────
+function startStage(id){
+  const progress = state.stageProgress;
+  if (id > 0 && !progress[id-1].done) return;
+  setState({ screen:"quiz", stageId:id, qIndex:0, answered:null, selectedLabel:null, correctCount:0 });
+}
+
+function handleAnswer(label){
+  if (state.answered) return;
+  const q = STAGES[state.stageId].questions[state.qIndex];
+  const correct = label === q.ans;
+  setState({
+    answered: correct ? "correct" : "wrong",
+    selectedLabel: label,
+    correctCount: correct ? state.correctCount + 1 : state.correctCount,
+  });
+  setTimeout(nextQuestion, correct ? 1200 : 1800);
+}
+
+function nextQuestion(){
+  const stage = STAGES[state.stageId];
+  const next = state.qIndex + 1;
+  if (next < stage.questions.length){
+    setState({ qIndex: next, answered: null, selectedLabel: null });
+  } else {
+    // Stage complete
+    const correct = state.correctCount;
+    const total   = stage.questions.length;
+    const stars   = correct >= total ? 3 : correct >= Math.ceil(total*0.66) ? 2 : 1;
+    const prev    = state.stageProgress;
+    const updated = prev.map((p,i) => i === state.stageId
+      ? { done:true, stars: Math.max(p.stars, stars), bestCorrect: Math.max(p.bestCorrect, correct) }
+      : p);
+    setState({
+      screen: "clear",
+      stageProgress: updated,
+      totalStars: updated.reduce((s,p)=>s+p.stars,0),
+    });
+  }
+}
+
+function goMap(){ setState({ screen:"map", stageId:null }); }
+function retryStage(){ startStage(state.stageId); }
+
+// ── RENDER ───────────────────────────────────────────────────────
+function render(){
+  const app = document.getElementById("app");
+  if      (state.screen === "map")   app.innerHTML = renderMap();
+  else if (state.screen === "quiz")  app.innerHTML = renderQuiz();
+  else if (state.screen === "clear") app.innerHTML = renderClear();
+  bindEvents();
+}
+
+function starsHtml(n, size=16){
+  let h="";
+  for(let i=0;i<3;i++) h+=`<span class="star${i<n?' earned':''}" style="font-size:${size}px">⭐</span>`;
+  return h;
+}
+
+// ── MAP ──────────────────────────────────────────────────────────
+function renderMap(){
+  const prog = state.stageProgress;
+  let h=`
+    <div class="topbar">
+      <div class="player-info">🗺️ Adventure Map</div>
+      <div class="stars-badge">⭐ ${state.totalStars} stars</div>
+    </div>
+    <div class="map-title">English Adventure</div>
+    <div class="map-subtitle">Tap a stage to start! 🚀</div>
+    <div class="stages-list">
+  `;
+  STAGES.forEach((s,i)=>{
+    const p = prog[i];
+    const locked = i>0 && !prog[i-1].done;
+    const pct = p.done ? 100 : 0;
+    const clickAttr = locked ? '' : `onclick="startStage(${i})"`;
+    h+=`
+      <div class="stage-card ${locked?'locked':''} ${p.done?'completed':''}"
+           style="background:${s.color}" ${clickAttr}>
+        <div class="stage-icon-wrap">${s.icon}</div>
+        <div class="stage-info">
+          <div class="stage-name">${s.name}</div>
+          <div class="stage-desc">${s.desc}</div>
+          <div class="star-row">${starsHtml(p.stars,15)}</div>
+          <div class="stage-progress" style="margin-top:6px">
+            <div class="stage-fill" style="width:${pct}%"></div>
+          </div>
+          <div class="stage-status">${p.done ? `Best: ${p.bestCorrect}/${s.questions.length} ✓` : locked ? '🔒 Complete previous stage' : 'Ready to play!'}</div>
+        </div>
+        ${locked ? '<div class="lock-icon">🔒</div>' : ''}
+      </div>
+    `;
+  });
+  h+=`</div>`;
+  return h;
+}
+
+// ── QUIZ ─────────────────────────────────────────────────────────
+function renderQuiz(){
+  const stage = STAGES[state.stageId];
+  const q     = stage.questions[state.qIndex];
+  const total = stage.questions.length;
+  const pct   = (state.qIndex / total) * 100;
+
+  let h=`
+    <div class="quiz-screen">
+      <div class="quiz-header">
+        <button class="back-btn" onclick="goMap()">← Map</button>
+        <div class="quiz-stage-name">${stage.icon} ${stage.name}</div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" style="width:${pct}%"></div>
+      </div>
+      <div class="question-card">
+        <div class="question-number">Question ${state.qIndex+1} of ${total}</div>
+        <div class="question-text">${q.q}</div>
+        <div class="question-hint" style="margin-bottom:16px">Tap the right picture! 👇</div>
+        <div class="choices-grid">
+  `;
+
+  q.choices.forEach(c=>{
+    let cls="choice-btn";
+    const isAnswered = !!state.answered;
+    if(isAnswered){
+      if(c.label===q.ans)                    cls+=" correct";
+      else if(c.label===state.selectedLabel) cls+=" wrong";
+      cls+=" disabled";
+    }
+    const clickAttr = isAnswered ? '' : `onclick="handleAnswer('${c.label.replace(/'/g,"\\'")}')"`;
+    h+=`
+      <button class="${cls}" ${clickAttr}>
+        <span class="choice-em">${c.e}</span>
+        <span class="choice-lbl">${c.label}</span>
+      </button>
+    `;
+  });
+
+  h+=`</div>`;
+
+  if(state.answered==="correct"){
+    h+=`<div class="feedback-strip good">✅ Great job! That's right! 🌟</div>`;
+  } else if(state.answered==="wrong"){
+    const correct = q.choices.find(c=>c.label===q.ans);
+    h+=`<div class="feedback-strip bad">❌ Not quite! It's ${correct.e} ${q.ans}!</div>`;
+  }
+
+  h+=`
+        <div style="margin-top:14px;font-size:13px;color:#aaa;text-align:center">
+          ✅ ${state.correctCount} correct so far
+        </div>
+      </div>
+    </div>
+  `;
+  return h;
+}
+
+// ── CLEAR ────────────────────────────────────────────────────────
+function renderClear(){
+  const stage   = STAGES[state.stageId];
+  const total   = stage.questions.length;
+  const correct = state.correctCount;
+  const stars   = correct >= total ? 3 : correct >= Math.ceil(total*0.66) ? 2 : 1;
+  const nextId  = state.stageId + 1;
+  const hasNext = nextId < STAGES.length;
+
+  const msgs = [
+    ["Keep trying! You can do it! 💪","Try again to get more stars!"],
+    ["Good job! Well done! 👏","Play again to get a perfect score!"],
+    ["Amazing! Perfect score! 🏆","You're an English star! ⭐⭐⭐"],
+  ];
+  const [title,sub] = msgs[stars-1];
+
+  let h=`
+    <div style="width:100%">
+      <div class="clear-card">
+        <span class="clear-emoji">${stars===3?'🏆':stars===2?'🎉':'💪'}</span>
+        <div class="clear-title">${title}</div>
+        <div class="clear-subtitle">${sub}</div>
+        <div class="clear-stars">${starsHtml(stars, 40)}</div>
+        <div class="clear-score">
+          ${stage.icon} ${stage.name}<br>
+          <span style="font-size:22px;font-weight:900;color:#333">${correct} / ${total}</span> correct
+        </div>
+        ${hasNext
+          ? `<button class="next-btn" onclick="startStage(${nextId})">Next Stage → ${STAGES[nextId].icon}</button>`
+          : `<button class="next-btn" onclick="goMap()" style="background:linear-gradient(135deg,#FFD93D,#FF8C00);color:#7a3000">🗺️ Back to Map</button>`
+        }
+        <button class="retry-btn" onclick="retryStage()">🔄 Play Again</button>
+      </div>
+    </div>
+  `;
+  return h;
+}
+
+// ── EVENTS ───────────────────────────────────────────────────────
+// すべてのボタンはinline onclickで処理するため、bindEventsは不要
+function bindEvents(){}
+
+render();
+</script>
+</body>
+</html>
